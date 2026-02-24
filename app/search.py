@@ -5,7 +5,7 @@ import requests
 def search_google(query):
     
     """Vyhledá klíčové slovo na Googlu pomocí SERP API
-    a uloží organické výsledky první stranky dp JSON souboru.
+    a uloží organické výsledky první stranky do JSON souboru.
     """
     
     # načtení API klíče z proměnné prostředí
@@ -47,7 +47,7 @@ def search_google(query):
 
     return results
 
-    #přiklad použití funkce
+    # přiklad použití funkce
     if __name__ == "__main__":
         search_query = input("Zadejte klíčové slovo: ")
         search_google(search_query)
