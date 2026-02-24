@@ -3,15 +3,16 @@ import json
 import requests
 
 def search_google(query):
-    """
-    Vyhledá klíčové slovo na Googlu pomocí SERP API
+    
+    """Vyhledá klíčové slovo na Googlu pomocí SERP API
     a uloží organické výsledky první stranky dp JSON souboru.
     """
+    
     # načtení API klíče z proměnné prostředí
     api_key = os.getenv("SERPAPI_KEY")
     if api_key is None:
         print("Chyba: proměnná SERPAPI_KEY není nastavena.")
-        return
+        return []
 
     # odeslání požadavku na SERP API
     response = requests.get(
@@ -41,7 +42,7 @@ def search_google(query):
         })
     
     # uložení výsledků do strukturovaného  JSON souboru na PC
-    with open(results.json, "w", encoding="urf-8") as file:
+    with open("results.json", "w", encoding="utf-8") as file:
         json.dump(results, file, ensure_ascii=False, indent=2)
 
     return results
