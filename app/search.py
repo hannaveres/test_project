@@ -1,10 +1,11 @@
 import os
 import json
 import requests
+from datetime import datetime
 
 def search_google(query):
-    
-    """Vyhledá klíčové slovo na Googlu pomocí SERP API
+    """
+    Vyhledá klíčové slovo na Googlu pomocí SERP API
     a uloží organické výsledky první stranky do JSON souboru.
     """
     
@@ -14,40 +15,79 @@ def search_google(query):
         print("Chyba: proměnná SERPAPI_KEY není nastavena.")
         return []
 
-    # odeslání požadavku na SERP API
-    response = requests.get(
-        "https://serpapi.com/search",
-        params={
-            "engine": "google",         # použití Google vyhledávače
-            "q": query,                 # klíčove slovo zadané uživatelem
-            "api_key": api_key,         # API klíč
-            "num": 10,                  # první stránka výsledků (cca 10)
-        },
-        timeout=10,                     # ochrana proti nekonečnému čekání
-    )
+    try:
+        # odeslání požadavku na SERP API
+        print(f"Vyhledávám: '{query}'")
+        response = requests.get(
+            "https://serpapi.com/search",
+            params={
+                "engine": "google",
+                "q": query,
+                "api_key": api_key,
+                "num": 10,
+            },
+            timeout=10,
+        )
+        print(f"Status kód: {response.status_code}")
+        
+        # kontrola HTTP chyb
+        response.raise_for_status()
+        
+        # převod odpovědi na JSON
+        data = response.json()
+        print(f"Klíče v odpovědi: {list(data.keys())}")
 
-    # kontrola HTTP chyb (4xx/ 5xx)
-    response.raise_for_status()
-    # převod odpovědi na JSON
-    data = response.json()
+        # kontrola chyb od API
+        if "error" in data:
+            print(f"Chyba API: {data['error']}")
+            return []
 
-    results = []
-    
-    # zpracování pouze organických výsledků výhledávání
-    for item in data.get("organic_results", []):
-        results.append({
-            "title": item.get("title"),
-            "url": item.get("link"),
-            "description": item.get("snippet"),
-        })
-    
-    # uložení výsledků do strukturovaného  JSON souboru na PC
-    with open("results.json", "w", encoding="utf-8") as file:
-        json.dump(results, file, ensure_ascii=False, indent=2)
+        # extrahujeme pouze organické výsledky
+        results = []
 
-    return results
+        if "organic_results" in data:
+            organic_results = data["organic_results"]
+            print(f"Počet výsledků: {len(organic_results)}")
 
-    # přiklad použití funkce
-    if __name__ == "__main__":
-        search_query = input("Zadejte klíčové slovo: ")
-        search_google(search_query)
+            for item in organic_results:
+                results.append({
+                    "title": item.get("title", ""),
+                    "link": item.get("link", ""),
+                    "snippet": item.get("snippet", ""),
+                })
+
+            # Debug: vytiskneme první výsledky
+            if results:
+                print(f"První výsledek: {results[0]['title'][:50]}...")
+        else:
+            print("'organic_results' nenalezeno v odpovědi")
+            if "error" in data:
+                print(f"Chyba API: {data['error']}")
+
+        # uložíme výsledky do JSON souboru
+        if results:
+            filename = f"search_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            with open(filename, "w", encoding="utf-8") as f:
+                json.dump({
+                    "query": query,
+                    "timestamp": datetime.now().isoformat(),
+                    "results": results
+                }, f, ensure_ascii=False, indent=2)
+            print(f"Výsledky uloženy do souboru: {filename}")
+        else: 
+            print("Žádné výsledky k uložení.") 
+            
+        return results
+                
+    except requests.exceptions.RequestException as e:
+        print(f"Chyba při volání API: {e}")
+        return []
+    except Exception as e:
+        print(f"Neočekávaná chyba: {e}")
+        return []
+
+# příklad použití funkce
+if __name__ == "__main__":
+    search_query = input("Zadejte klíčové slovo: ")
+    results = search_google(search_query)
+    print(f"Nalezeno {len(results)} výsledků")
